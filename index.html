@@ -3,13 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>StudyHub</title>
 </head>
 <body>
     <div class="nav">
-        <a class="logo">AppleForum</a>
+        <a class="logo">StudyHub</a>
         <a>Page1</a>
         <a>Page2</a>
     </div> 
+
+    <div>
+        <input type="text" id="inputField" placeholder="데이터를 입력하세요">
+        <button id="saveButton">데이터 저장</button>
+    </div>
+
+
+
+    <script>
+        document.getElementById('saveButton').addEventListener('click', function(){
+            const inputData = document.getElementById('inputField').value;
+            fetch('/api', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ data: inputData })
+            })
+        })
+    </script>
 </body>
 </html> 

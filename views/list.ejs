@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body class="grey-bg">
+
+  <div class="white-bg">
+  <% for (let i = 0; i < 글목록.length; i++){ %>
+    <div class="list-box">
+      <h4>
+        <a href="/detail/<%= 글목록[i].id %>">
+          <%= 글목록[i].email %>
+        </a>
+        <a href="/edit/<%= 글목록[i].id %>">✏️</a>
+        <span class="delete" data-id="<%= 글목록[i].id %>">🗑️</span>
+      </h4>
+      <p><%= 글목록[i].nickname %></p>
+    </div>
+  <% } %>
+</div>
+
+<script>
+  document.querySelectorAll('.delete').forEach((deleteBtn, i) => {
+    deleteBtn.addEventListener('click', function(){
+      fetch(
+        '/delete?docid=' + deleteBtn.dataset.id,
+        {
+          method: 'DELETE',
+        }
+    )
+  })
+})
+</script>
+
+</body>
+</html> 
