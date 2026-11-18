@@ -50,14 +50,14 @@ app.get('/news', (요청, 응답) => {
   응답.send('뉴스 화면')
 })
 
-app.get('/list', (요청, 응답) => {
-  connection.query('SELECT * FROM users', function(err, results, fields) {
-    if (err) {
-      console.error('쿼리 실행 실패: ' + err.stack);
-    }
-    응답.render('list.ejs', { 글목록: results });
-  });
-});
+// app.get('/list', (요청, 응답) => {
+//   connection.query('SELECT * FROM users', function(err, results, fields) {
+//     if (err) {
+//       console.error('쿼리 실행 실패: ' + err.stack);
+//     }
+//     응답.render('list.ejs', { 글목록: results });
+//   });
+// });
 
 app.get('/add', (요청, 응답) => {
   응답.render('view.ejs')
@@ -142,3 +142,26 @@ app.delete('/delete', (요청, 응답) => {
     응답.redirect('/list');
   });
 });
+
+//페이지네이션 만들기
+// 각 페이지 아래에 이동버튼을 만듬
+//버튼 1 누르면 1~5번째 글 보여주고
+//버튼 2 누르면 6~10번째 글 보여주고하면 될듯?
+
+
+
+
+app.get('/list/:id', (요청, 응답) => {
+  const limit = 5;
+  const offset = (요청.params.id - 1) * limit;
+  const page = Number(요청.params.id);
+  const startPage = Math.floor((page - 1) / 5) * 5 + 1;
+  const endPage = startPage + 4;
+  connection.query('SELECT * FROM users ORDER BY id ASC LIMIT ? OFFSET ?', [limit, offset], function(err, results, fields) {
+    if (err) {
+      console.error('쿼리 실행 실패: ' + err.stack);
+    }
+    응답.render('list.ejs', {글목록: results, page, startPage, endPage });
+  });
+});
+
