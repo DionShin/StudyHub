@@ -148,20 +148,34 @@ app.delete('/delete', (요청, 응답) => {
 //버튼 1 누르면 1~5번째 글 보여주고
 //버튼 2 누르면 6~10번째 글 보여주고하면 될듯?
 
-
-
-
 app.get('/list/:id', (요청, 응답) => {
   const limit = 5;
-  const offset = (요청.params.id - 1) * limit;
   const page = Number(요청.params.id);
-  const startPage = Math.floor((page - 1) / 5) * 5 + 1;
-  const endPage = startPage + 4;
-  connection.query('SELECT * FROM users ORDER BY id ASC LIMIT ? OFFSET ?', [limit, offset], function(err, results, fields) {
+  if (!Number.isSafeInteger(page) || page < 1) {
+    return 응답.redirect('/list/1');
+  }
+
+  connection.query('SELECT COUNT(*) AS total FROM users', function(err, countResults) {
     if (err) {
-      console.error('쿼리 실행 실패: ' + err.stack);
+      console.error('개수 조회 실패: ' + err.stack);
+      return 응답.status(500).send('개수 조회 실패');
     }
-    응답.render('list.ejs', {글목록: results, page, startPage, endPage });
+
+    const totalPages = Math.ceil(countResults[0].total / limit);
+    if (page > Math.max(1, totalPages)) {
+      return 응답.redirect('/list/' + Math.max(1, totalPages));
+    }
+
+    const offset = (page - 1) * limit;
+    const startPage = Math.floor((page - 1) / 5) * 5 + 1;
+    const endPage = Math.min(startPage + 4, totalPages);
+
+    connection.query('SELECT * FROM users ORDER BY id ASC LIMIT ? OFFSET ?', [limit, offset], function(err, results, fields) {
+      if (err) {
+        console.error('쿼리 실행 실패: ' + err.stack);
+        return 응답.status(500).send('조회 실패');
+      }
+      응답.render('list.ejs', {글목록: results, page, startPage, endPage, totalPages });
+    });
   });
 });
-

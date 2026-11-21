@@ -9,7 +9,10 @@
 </head>
 <body class="grey-bg">
 
+  
   <%- include('nav') %>
+
+//게시글 목록
   <div class="white-bg">
   <% for (let i = 0; i < 글목록.length; i++){ %>
     <div class="list-box">
@@ -25,6 +28,8 @@
   <% } %>
     
 
+//페이지네이션
+  <% if (totalPages > 0) { %>
   <nav aria-label="Page navigation example">
     <ul class="pagination">
       <li class="page-item <%= startPage === 1 ? 'disabled' : '' %>">
@@ -43,11 +48,16 @@
         </li>
       <% } %>
 
-      <li class="page-item">
-        <a class="page-link" href="/list/<%= endPage + 1 %>">Next</a>
+      <li class="page-item <%= endPage >= totalPages ? 'disabled' : '' %>">
+        <% if (endPage >= totalPages) { %>
+          <span class="page-link">Next</span>
+        <% } else { %>
+          <a class="page-link" href="/list/<%= endPage + 1 %>">Next</a>
+        <% } %>
       </li>
     </ul>
   </nav>
+  <% } %>
 
 
 </div>
