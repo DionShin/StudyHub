@@ -179,3 +179,39 @@ app.get('/list/:id', (요청, 응답) => {
     });
   });
 });
+
+
+const session = require('express-session')
+const passport = require('passport')
+const LocalStrategy = require('passport-local')
+
+app.use(passport.initialize())
+app.use(session({
+  //session을 암호화해서 저장할 때 쓰는 비밀번호
+  secret: process.env.session_secret,
+  resave : false,
+  saveUninitialized : false
+}))
+
+app.use(passport.session()) 
+
+
+
+app.get('/join', (요청, 응답) => {
+  응답.render('join.ejs')
+})
+
+app.post('/join', (요청, 응답) => {
+  const { nickname, email, password } = 요청.body;
+  connection.query('INSERT INTO users (nickname, email, password_hash) VALUES (?, ?, ?)',
+    [nickname, email, password], function(err, results, fields) {
+    if (err) {
+      console.error('데이터 삽입 실패: ' + err.stack);
+      응답.status(500).send('데이터 삽입 실패');
+      return;
+    }
+    else {
+      응답.redirect('/');
+    }
+})
+})
