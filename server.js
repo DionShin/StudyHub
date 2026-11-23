@@ -35,7 +35,34 @@ app.use(express.urlencoded({extended:true}))
 app.set('view engine', 'ejs') 
 
 
+//passport 라이브러리
+const session = require('express-session')
+const passport = require('passport')
+const LocalStrategy = require('passport-local')
 
+app.use(passport.initialize())
+app.use(session({
+  //session을 암호화해서 저장할 때 쓰는 비밀번호
+  secret: process.env.session_secret,
+  resave : false,
+  saveUninitialized : false
+}))
+
+app.use(passport.session()) 
+
+passport.use(new LocalStrategy(async (입력한아이디, 입력한비번, cb) => {
+  connection.query('SELECT * FROM users WHERE email = ?', [입력한아이디], function(err, results, fields) {
+    if (err) {
+      console.error('쿼리 실행 실패: ' + err.stack);
+      return cb(null, false, { message: '아이디 DB에 없음' })
+    }
+    if (results.length > 0 && results.password == 입력한비번) {
+      return cb(null, results)
+    } else {
+      return cb(null, false, { message: '비번불일치' });
+    }
+  })
+}))
 
 
 app.listen(8080, () => {
@@ -181,20 +208,6 @@ app.get('/list/:id', (요청, 응답) => {
 });
 
 
-const session = require('express-session')
-const passport = require('passport')
-const LocalStrategy = require('passport-local')
-
-app.use(passport.initialize())
-app.use(session({
-  //session을 암호화해서 저장할 때 쓰는 비밀번호
-  secret: process.env.session_secret,
-  resave : false,
-  saveUninitialized : false
-}))
-
-app.use(passport.session()) 
-
 
 
 app.get('/join', (요청, 응답) => {
@@ -214,4 +227,20 @@ app.post('/join', (요청, 응답) => {
       응답.redirect('/');
     }
 })
+})
+
+app.get('/login', (요청, 응답) => {
+  응답.render('login.ejs')
+})
+
+app.post('/login', async(요청, 응답) => {
+  // 요청.body가 db에 있는거랑 일치하는지 확인하고 세션 생성
+  passport.authenticate('local', (error, user, info) => {
+      if (error) return 응답.status(500).json(error)
+      if (!user) return 응답.status(401).json(info.message)
+      요청.logIn(user, (err) => {
+        if (err) return next(err)
+        응답.redirect('/')
+      })
+  })(요청, 응답, next)
 })
