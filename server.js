@@ -45,24 +45,49 @@ app.use(session({
   //session을 암호화해서 저장할 때 쓰는 비밀번호
   secret: process.env.session_secret,
   resave : false,
-  saveUninitialized : false
+  saveUninitialized : false,
+  cookie : { maxAge : 60 * 60 * 1000 }
 }))
 
 app.use(passport.session()) 
 
-passport.use(new LocalStrategy(async (입력한아이디, 입력한비번, cb) => {
+passport.use(new LocalStrategy({ usernameField: 'email' }, (입력한아이디, 입력한비번, cb) => {
   connection.query('SELECT * FROM users WHERE email = ?', [입력한아이디], function(err, results, fields) {
     if (err) {
       console.error('쿼리 실행 실패: ' + err.stack);
-      return cb(null, false, { message: '아이디 DB에 없음' })
+      return cb(err)
     }
-    if (results.length > 0 && results.password == 입력한비번) {
-      return cb(null, results)
-    } else {
-      return cb(null, false, { message: '비번불일치' });
+    if (results.length === 0) {
+      return cb(null, false, { message: '이메일 또는 비밀번호가 일치하지 않습니다.' });
     }
+
+    const user = results[0];
+    if (user.password_hash !== 입력한비번) {
+      return cb(null, false, { message: '이메일 또는 비밀번호가 일치하지 않습니다.' });
+    }
+    return cb(null, { id: user.id, nickname: user.nickname, email: user.email });
   })
 }))
+
+//로그인 성공 시 세션 생성후 유저에게 전달
+passport.serializeUser((user, done) => {
+  process.nextTick(() => {
+    done(null, { id: user.id })
+  })
+})
+
+//유저가 서버에 요청할때마다 쿠키 까보고 로그인 여부 판단
+passport.deserializeUser((user, done) => {
+  connection.query('SELECT id, nickname, email FROM users WHERE id = ?', [user.id], function(err, results, fields) {
+    if (err) {
+      console.error('쿼리 실행 실패: ' + err.stack);
+      return done(err)
+    }
+  process.nextTick(() => {
+    return done(null, results[0] || false)
+  })
+})
+})
 
 
 app.listen(8080, () => {
@@ -233,7 +258,7 @@ app.get('/login', (요청, 응답) => {
   응답.render('login.ejs')
 })
 
-app.post('/login', async(요청, 응답) => {
+app.post('/login', (요청, 응답, next) => {
   // 요청.body가 db에 있는거랑 일치하는지 확인하고 세션 생성
   passport.authenticate('local', (error, user, info) => {
       if (error) return 응답.status(500).json(error)
