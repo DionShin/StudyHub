@@ -5,6 +5,8 @@ const app = express()
 //env 파일 사용
 require('dotenv').config();
 
+//해싱용 bcyrpy
+const bcrypt = require('bcrypt')
 
 // MySQL 연결 설정
 const mysql = require('mysql2');
@@ -51,8 +53,8 @@ app.use(session({
 
 app.use(passport.session()) 
 
-passport.use(new LocalStrategy({ usernameField: 'email' }, (입력한아이디, 입력한비번, cb) => {
-  connection.query('SELECT * FROM users WHERE email = ?', [입력한아이디], function(err, results, fields) {
+passport.use(new LocalStrategy({ usernameField: 'email' },  (입력한아이디, 입력한비번, cb) => {
+  connection.query('SELECT * FROM users WHERE email = ?', [입력한아이디], async function(err, results, fields) {
     if (err) {
       console.error('쿼리 실행 실패: ' + err.stack);
       return cb(err)
@@ -62,12 +64,13 @@ passport.use(new LocalStrategy({ usernameField: 'email' }, (입력한아이디, 
     }
 
     const user = results[0];
-    if (user.password_hash !== 입력한비번) {
+    if (await bcrypt.compare(입력한비번, user.password_hash) === false) {
       return cb(null, false, { message: '이메일 또는 비밀번호가 일치하지 않습니다.' });
     }
     return cb(null, { id: user.id, nickname: user.nickname, email: user.email });
   })
 }))
+
 
 //로그인 성공 시 세션 생성후 유저에게 전달
 passport.serializeUser((user, done) => {
@@ -239,10 +242,11 @@ app.get('/join', (요청, 응답) => {
   응답.render('join.ejs')
 })
 
-app.post('/join', (요청, 응답) => {
+app.post('/join', async (요청, 응답) => {
   const { nickname, email, password } = 요청.body;
+  let hash = await bcrypt.hash(password, 10);
   connection.query('INSERT INTO users (nickname, email, password_hash) VALUES (?, ?, ?)',
-    [nickname, email, password], function(err, results, fields) {
+    [nickname, email, hash], function(err, results, fields) {
     if (err) {
       console.error('데이터 삽입 실패: ' + err.stack);
       응답.status(500).send('데이터 삽입 실패');
@@ -268,4 +272,11 @@ app.post('/login', (요청, 응답, next) => {
         응답.redirect('/')
       })
   })(요청, 응답, next)
+})
+
+app.get('/mypage', (요청, 응답) => {
+  if (!요청.isAuthenticated()) {
+    return 응답.redirect('/login');
+  }
+  응답.render('mypage.ejs', { user: 요청.user });
 })
