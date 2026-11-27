@@ -12,6 +12,9 @@
   
   <%- include('nav') %>
 
+  <input class="search">
+  <button class="search-send">검색</button> 
+
 //게시글 목록
   <div class="white-bg">
   <% for (let i = 0; i < 글목록.length; i++){ %>
@@ -28,7 +31,7 @@
   <% } %>
     
 
-//페이지네이션
+  <!-- 페이지네이션 -->
   <% if (totalPages > 0) { %>
   <nav aria-label="Page navigation example">
     <ul class="pagination">
@@ -73,6 +76,13 @@
     )
   })
 })
+</script>
+
+<script>
+  document.querySelector('.search-send').addEventListener('click', function(){
+    let searchvalue = document.querySelector('.search').value
+    location.href = '/search?val=' + searchvalue
+  })
 </script>
 
 </body>

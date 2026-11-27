@@ -115,7 +115,7 @@ app.get('/news', (요청, 응답) => {
 // });
 
 app.get('/add', (요청, 응답) => {
-  응답.render('view.ejs')
+  응답.render('write.ejs')
 })
 
 app.get('/detail/:id', (요청, 응답) => {
@@ -139,7 +139,7 @@ app.post('/api', (요청, 응답) => {
 
 app.post('/add', (요청, 응답) => {
   console.log(요청.body)
-  connection.query('INSERT INTO users (nickname, email, password_hash) VALUES (?, ?, ?)', 
+  connection.query('INSERT INTO studies (nickname, email, password_hash) VALUES (?, ?, ?)', 
     [요청.body.nickname, 요청.body.email, 요청.body.password], function(err, results, fields) {
     if (err) {
       console.error('데이터 삽입 실패: ' + err.stack);
@@ -279,4 +279,16 @@ app.get('/mypage', (요청, 응답) => {
     return 응답.redirect('/login');
   }
   응답.render('mypage.ejs', { user: 요청.user });
+})
+
+//검색기능
+app.get('/search', (요청, 응답) => {
+  const searchValue = 요청.query.val;
+  connection.query('SELECT * FROM users WHERE nickname LIKE ?', [`%${searchValue}%`], function(err, results, fields) {
+    if (err) {
+      console.error('검색 실패: ' + err.stack);
+      return 응답.status(500).send('검색 실패');
+    }
+    응답.render('list.ejs', { 글목록: results, page: 1, startPage: 1, endPage: 1, totalPages: 1 });
+  });
 })
